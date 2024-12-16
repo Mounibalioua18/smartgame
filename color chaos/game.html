@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Chaos Challenge</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #b4a7b2, #a34492);
+            color: white;
+            text-align: center;
+        }
+        #game-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.6);
+        }
+        #grid {
+            display: grid;
+            gap: 10px;
+            margin: 20px auto;
+            width: 300px;
+            height: 300px;
+        }
+        .tile {
+            background-color: #ffffff;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .tile.active {
+            background-color: #ff7043;
+            transform: scale(1.1);
+        }
+        .tile.clicked {
+            background-color: #29b6f6;
+        }
+        #message {
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+        #start-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            background: #ff7043;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #start-btn:hover {
+            background-color: #ff5722;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Color Chaos Challenge</h1>
+        <div id="grid"></div>
+        <button id="start-btn">Start Game</button>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        const gridContainer = document.getElementById('grid');
+        const startButton = document.getElementById('start-btn');
+        const message = document.getElementById('message');
+
+        let gridSize = 4; // Initial grid size (4x4)
+        let pattern = [];
+        let playerInput = [];
+        let currentLevel = 1;
+        let gameActive = false;
+
+        // Utility to generate a random integer
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * max);
+        }
+
+        // Create the grid dynamically
+        function createGrid(size) {
+            gridContainer.innerHTML = '';
+            gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+
+            for (let i = 0; i < size * size; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('tile');
+                tile.dataset.index = i;
+                tile.addEventListener('click', handleTileClick);
+                gridContainer.appendChild(tile);
+            }
+        }
+
+        // Generate a random pattern
+        function generatePattern(size) {
+            const totalTiles = size * size;
+            pattern = Array.from({ length: currentLevel + 2 }, () => getRandomInt(totalTiles));
+        }
+
+        // Play the pattern visually
+        async function playPattern() {
+            gameActive = false;
+            for (let index of pattern) {
+                const tile = gridContainer.children[index];
+                await flashTile(tile);
+            }
+            gameActive = true;
+            message.textContent = 'Your turn! Repeat the pattern.';
+        }
+
+        // Flash a single tile
+        function flashTile(tile) {
+            return new Promise(resolve => {
+                tile.classList.add('active');
+                setTimeout(() => {
+                    tile.classList.remove('active');
+                    setTimeout(resolve, 200);
+                }, 500);
+            });
+        }
+
+        // Handle player's tile clicks
+        function handleTileClick(event) {
+            if (!gameActive) return;
+
+            const tile = event.target;
+            const index = parseInt(tile.dataset.index);
+            playerInput.push(index);
+
+            // Change the tile's color on click
+            tile.classList.add('clicked');
+            setTimeout(() => tile.classList.remove('clicked'), 300);
+
+            // Check input so far
+            if (playerInput[playerInput.length - 1] !== pattern[playerInput.length - 1]) {
+                message.textContent = 'Wrong tile! Game Over!';
+                resetGame();
+                return;
+            }
+
+            // Check if the player completed the pattern
+            if (playerInput.length === pattern.length) {
+                message.textContent = 'Correct! Get ready for the next level!';
+                setTimeout(nextLevel, 1000);
+            }
+        }
+
+        // Move to the next level
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel % 3 === 0) gridSize++; // Increase grid size every 3 levels
+            playerInput = [];
+            createGrid(gridSize);
+            generatePattern(gridSize);
+            playPattern();
+        }
+
+        // Reset the game
+        function resetGame() {
+            gameActive = false;
+            currentLevel = 1;
+            gridSize = 4;
+            playerInput = [];
+            startButton.style.display = 'block';
+        }
+
+        // Start the game
+        function startGame() {
+            startButton.style.display = 'none';
+            message.textContent = 'Watch the pattern!';
+            createGrid(gridSize);
+            generatePattern(gridSize);
+            playPattern();
+        }
+
+        // Event listener for start button
+        startButton.addEventListener('click', startGame);
+
+        // Initial setup
+        gridContainer.style.display = 'grid';
+    </script>
+</body>
+</html>
